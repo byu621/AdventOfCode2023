@@ -1,4 +1,3 @@
-
 namespace AdventOfCode;
 
 public class Day12 : BaseDay
@@ -58,61 +57,83 @@ public class Day12 : BaseDay
         return patternIndex == pattern.Count;
     }
 
-    private int Recurse2(string baseLine, string line, int index, List<int> pattern, int patternIndex, int hashCount)
+    private string CreateMemoString(char c, int index, int patternIndex, int hashCount)
     {
-        if (index == baseLine.Length)
+        return $"{c},{index},{patternIndex},{hashCount}";
+    }
+
+    private long Recurse2(Dictionary<string, long> dict, string baseLine, int index, List<int> pattern, int patternIndex, int hashCount)
+    {
+        char c = index == baseLine.Length ? 'b' : baseLine[index];
+        string memoString = CreateMemoString(c, index, patternIndex, hashCount);
+        if (dict.ContainsKey(memoString))
         {
-            return PatternMatches(line, pattern) ? 1 : 0;
+            return dict[memoString];
         }
 
+        if (index == baseLine.Length)
+        {
+            if (patternIndex != pattern.Count)
+            {
+                dict[memoString] = 0;
+                return 0;
+            } 
+            
+            if (hashCount != 0) {
+                dict[memoString] = 0;
+                return 0;
+            } 
+
+            dict[memoString] = 1;
+            return 1;
+            
+        }
+        
         if (baseLine[index] == '#')
         {
-            if (patternIndex == pattern.Count) return 0;
             if (hashCount > 0)
             {
                 hashCount--;
-                if (hashCount == 0)
-                {
-                    if (index + 1 == line.Length) return 1;
-                    if (baseLine[index + 1] == '#') return 0;
-                    return Recurse2(baseLine, line + "#.", index + 2, pattern, patternIndex, hashCount);
-                }
-
-                return Recurse2(baseLine, line + "#", index + 1, pattern, patternIndex, hashCount);
-            }
-
-            if (hashCount == 0)
+            } 
+            else if (hashCount == 0)
             {
+                if (patternIndex == pattern.Count) return 0; // no more patterns
                 hashCount = pattern[patternIndex] - 1;
                 patternIndex++;
             }
 
-            return Recurse2(baseLine, line + '#', index + 1, pattern, patternIndex, hashCount);
+            if (hashCount == 0)
+            {
+                if (index + 1 == baseLine.Length) return Recurse2(dict, baseLine, index + 1, pattern, patternIndex, 0);
+                if (baseLine[index + 1] == '#') return 0;
+                return Recurse2(dict, baseLine, index + 2, pattern, patternIndex, 0);
+            }
+
+            dict[memoString] = Recurse2(dict, baseLine, index + 1, pattern, patternIndex, hashCount);
+            return dict[memoString];
         }
 
         if (baseLine[index] == '.')
         {
             if (hashCount > 0) return 0;
-            return Recurse2(baseLine, line + '.', index + 1, pattern, patternIndex, hashCount);
+            dict[memoString] = Recurse2(dict, baseLine, index + 1, pattern, patternIndex, hashCount);
+            return dict[memoString];
         }
 
         if (baseLine[index] == '?')
         {
             if (hashCount > 0)
             {
-                hashCount--;
-                if (hashCount == 0)
-                {
-                    if (index + 1 == line.Length) return 1;
-                    if (baseLine[index + 1] == '#') return 0;
-                    return Recurse2(baseLine, line + "#.", index + 2, pattern, patternIndex, hashCount);
-                }
-
-                return Recurse2(baseLine, line + "#", index + 1, pattern, patternIndex, hashCount);
-            }
-
-            int a = Recurse2(baseLine, line + '.', index + 1, pattern, patternIndex, hashCount);
-            int b = Recurse2(baseLine, line + '#', index + 1, pattern, patternIndex, hashCount);
+                string newBaseLine = ReplaceCharAtIndex(baseLine, index, '#');
+                dict[memoString] = Recurse2(dict, newBaseLine, index, pattern, patternIndex, hashCount);
+                return dict[memoString];
+            } 
+            
+            string newBaseLineA = ReplaceCharAtIndex(baseLine, index, '#');
+            long a = Recurse2(dict, newBaseLineA, index, pattern, patternIndex, hashCount);
+            string newBaseLineB = ReplaceCharAtIndex(baseLine, index, '.');
+            long b = Recurse2(dict, newBaseLineB, index, pattern, patternIndex, hashCount);
+            dict[memoString] = a + b;
             return a + b;
         }
 
@@ -134,19 +155,16 @@ public class Day12 : BaseDay
 
     public override ValueTask<string> Solve_2()
     {
-         int total = 0;
-         string line = "????.######..#####. 1,6,5";
-        // foreach(string line in _lines)
-        // {
+        long total = 0;
+        foreach(string line in _lines)
+        {
             string[] split = line.Split(" ");
             List<int> pattern = split[1].Split(',').Select(int.Parse).ToList();
             List<int> expandedPattern = ExpandPattern(pattern);
             string baseLine = split[0];
             string expandedBaseLine = ExpandBaseLine(baseLine);
-            total += Recurse2(baseLine, "", 0, pattern, 0, 0);
-            
-            // if (line == "?#?#?#?#?#?#?#? 1,3,1,6") break;
-        // }
+            total += Recurse2(new(), expandedBaseLine, 0, expandedPattern, 0, 0);
+        }
         return new($"{total}");
     }
 
@@ -160,7 +178,7 @@ public class Day12 : BaseDay
                 expanded += baseLine[j];
             }
 
-            expanded += '?';
+            if (i!=4) expanded += '?';
         }
 
         return expanded;
@@ -179,5 +197,19 @@ public class Day12 : BaseDay
         }
 
         return expanded;
+    }
+
+    static string ReplaceCharAtIndex(string input, int index, char replacement)
+    {
+        if (index < 0 || index >= input.Length)
+        {
+            // Index out of bounds, return the original string
+            return input;
+        }
+
+        char[] charArray = input.ToCharArray();
+        charArray[index] = replacement;
+
+        return new string(charArray);
     }
 }
