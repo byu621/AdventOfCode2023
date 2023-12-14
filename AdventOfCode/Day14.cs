@@ -10,14 +10,27 @@ public class Day14 : BaseDay
         _lines = File.ReadAllLines(InputFilePath);
     }
 
-    public override ValueTask<string> Solve_1()
+    static List<List<char>> RotateMatrix90Degrees(List<List<char>> matrix)
     {
-        List<List<char>> rows = new();
-        foreach(string line in _lines)
+        int rows = matrix.Count;
+        int cols = matrix[0].Count;
+
+        List<List<char>> rotatedMatrix = new List<List<char>>(cols);
+
+        for (int i = 0; i < cols; i++)
         {
-            rows.Add(line.ToCharArray().ToList());
+            rotatedMatrix.Add(new List<char>(rows));
+            for (int j = 0; j < rows; j++)
+            {
+                rotatedMatrix[i].Add(matrix[rows - 1 - j][i]);
+            }
         }
 
+        return rotatedMatrix;
+    }
+
+    private void TiltNorth(List<List<char>> rows)
+    {
         for (int i = 0; i < rows.Count; i++)
         {
             for (int j = 0; j < rows[i].Count; j++)
@@ -38,7 +51,10 @@ public class Day14 : BaseDay
                 }
             }
         }
+    }
 
+    private int CalculateLoad(List<List<char>> rows)
+    {
         int total = 0;
         for (int i = 0; i < rows.Count; i++)
         {
@@ -50,6 +66,33 @@ public class Day14 : BaseDay
 
         }
 
+        return total;
+    }
+
+    public override ValueTask<string> Solve_1()
+    {
+        List<List<char>> rows = new();
+        foreach(string line in _lines)
+        {
+            rows.Add(line.ToCharArray().ToList());
+        }
+
+
+        for (int i = 0 ; i < 1000; i++)
+        {
+            TiltNorth(rows);
+            rows = RotateMatrix90Degrees(rows);
+            TiltNorth(rows);
+            rows = RotateMatrix90Degrees(rows);
+            TiltNorth(rows);
+            rows = RotateMatrix90Degrees(rows);
+            TiltNorth(rows);
+            rows = RotateMatrix90Degrees(rows);
+
+            System.Console.WriteLine($"{i}:{CalculateLoad(rows)}");
+        }
+
+        int total = CalculateLoad(rows);
         return new($"{total}");
     }
 
