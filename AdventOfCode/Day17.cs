@@ -22,52 +22,53 @@ public class Day17 : BaseDay
     }
 
 
-    private int minSoFar = int.MaxValue;
-    private Dictionary<(int, int, int, int), int> memo = new();
+    private int minSoFar = 913;
+    private Dictionary<string, int> memo = new();
 
 
-    private int Recurse(List<List<int>> board, HashSet<(int,int)> seen, int total, int i, int j, int direction, int consec)
+    private int Recurse2(List<List<int>> board, int total, int i, int j, int direction, int consec)
     {
         int height = board.Count;
         int width = board[0].Count;
         
-        if (consec > 3) return int.MaxValue;
+        if (consec > 10) return int.MaxValue;
         if (i < 0 || i >= height || j < 0 || j >= width) return int.MaxValue;
-        if (seen.Contains((i, j))) return int.MaxValue;
         int newTotal = total + board[i][j];
         if (newTotal >= minSoFar) return int.MaxValue;
-        var memoKey = (i, j, direction, consec);
-        if (memo.ContainsKey(memoKey))
+        string memoKey = $"${i},{j},{direction},{consec}";
+        if (memo.TryGetValue(memoKey, out int value))
         {
-            if (memo[memoKey] <= newTotal) return int.MaxValue;
+            if (value <= newTotal) return int.MaxValue;
         }
 
         memo[memoKey] = newTotal;
 
-        if (i == height - 1 && j == width - 1)
+        if (i == height - 1 && j == width - 1 && consec >= 3)
         {
             minSoFar = newTotal;
             System.Console.WriteLine($"foundit:{minSoFar}");
             return newTotal;
         }
-        seen.Add((i, j));
 
         (int straightA, int straightB) = nextSquare(i, j, direction);
-        int straight = Recurse(board, seen, newTotal, straightA, straightB, direction, consec + 1);
+        int straight = Recurse2(board, newTotal, straightA, straightB, direction, consec + 1);
 
         (int leftA, int leftB) = nextSquare(i, j, (direction + 3) % 4);
-        int left = Recurse(board, seen, newTotal, leftA, leftB, (direction + 3) % 4, 1);
+        int left = consec <= 3 ? int.MaxValue : Recurse2(board, newTotal, leftA, leftB, (direction + 3) % 4, 1);
 
         (int rightA, int rightB) = nextSquare(i, j, (direction + 1) % 4);
-        int right = Recurse(board, seen, newTotal, rightA, rightB, (direction + 1) % 4, 1);
+        int right = consec <= 3 ? int.MaxValue : Recurse2(board, newTotal, rightA, rightB, (direction + 1) % 4, 1);
 
-        seen.Remove((i, j));
         int min = Math.Min(straight, left);
         return Math.Min(min, right);
     }
-
     public override ValueTask<string> Solve_1()
     { 
+        return new($"0");
+    }
+
+    public override ValueTask<string> Solve_2()
+    {
         List<List<int>> board = new();
         foreach (string line in _lines)
         {
@@ -78,14 +79,9 @@ public class Day17 : BaseDay
             }
         }
 
-        int left = Recurse(board, new(), -board[0][0], 0, 0, 0, 1);
-        int down = Recurse(board, new(), -board[0][0], 0, 0, 0, 1);
+        int left = Recurse2(board, -board[0][0], 0, 0, 0, 1);
+        int down = Recurse2(board, -board[0][0], 0, 0, 1, 1);
         int total = Math.Min(left, down);
         return new($"{total}");
-    }
-
-    public override ValueTask<string> Solve_2()
-    {
-        throw new NotImplementedException();
     }
 }

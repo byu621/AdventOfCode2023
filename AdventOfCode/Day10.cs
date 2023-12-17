@@ -67,7 +67,6 @@ public class Day10 : BaseDay
             {
                 if (_lines[i][j] == 'S')
                 {
-                    char sPipe = 'F';
                     List<(int,int)> seen = new();
                     seen.Add((i,j));
                     int output = Recurse(i, j - 1, i - 1, j, 1, seen);
@@ -102,7 +101,6 @@ public class Day10 : BaseDay
                 if (seen.Contains((i, j))) continue;
 
                 int count = 0;
-                bool up = true;
                 for (int k = j + 1; k < _lines[0].Length; k++)
                 {
                     if (!seen.Contains((i, k))) continue;
