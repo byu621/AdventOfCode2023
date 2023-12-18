@@ -19,24 +19,12 @@ public class Day16 : BaseDay
         throw new Exception();
     }
 
-    public override ValueTask<string> Solve_1()
+    private int GetEnergy(List<List<char>> board, int height, int width, int i, int j, int direction)
     {
-        List<List<char>> board = new();
-        foreach (string line in _lines)
-        {
-            board.Add(new());
-            foreach (char c in line)
-            {
-                board.Last().Add(c);
-            }
-        }
-
-        int height = board.Count;
-        int width = board[0].Count;
         HashSet<(int,int)> energized = new();
         HashSet<(int,int,int)> seen = new();
         Stack<(int,int,int)> stack = new();
-        stack.Push((0,-1,0));
+        stack.Push((i,j,direction));
 
         while (stack.Any())
         {
@@ -102,8 +90,40 @@ public class Day16 : BaseDay
 
         }
 
-        energized.Remove((0,-1));
-        return new($"{energized.Count}");
+        energized.Remove((i,j));
+        return energized.Count;
+    }
+
+    public override ValueTask<string> Solve_1()
+    {
+        List<List<char>> board = new();
+        foreach (string line in _lines)
+        {
+            board.Add(new());
+            foreach (char c in line)
+            {
+                board.Last().Add(c);
+            }
+        }
+
+        int height = board.Count;
+        int width = board[0].Count;
+        int maxEnergy = 0;
+
+        for (int i = 0; i < height; i++)
+        {
+            maxEnergy = Math.Max(GetEnergy(board, height, width, i, -1, 0), maxEnergy);
+            maxEnergy = Math.Max(GetEnergy(board, height, width, i, width, 2), maxEnergy);
+        }
+
+        for (int j = 0; j < height; j++)
+        {
+            maxEnergy = Math.Max(GetEnergy(board, height, width, -1, j, 1), maxEnergy);
+            maxEnergy = Math.Max(GetEnergy(board, height, width, height, j, 3), maxEnergy);
+        }
+
+        return new($"{maxEnergy}");
+
     }
 
     public override ValueTask<string> Solve_2()
